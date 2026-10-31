@@ -105,9 +105,9 @@ var FIELDS = {
 };
 var PROMPT = {entity:'Entity?',date:'Date?',check:'Check #?',payee:'Payee?',account:'Account?',to_account:'To account?',category:'Category?',amount:'Amount?',memo:'Memo?'};
 var TYPE_LABEL = {expense:'Expense',deposit:'Deposit',transfer:'Transfer'};
-var APP_VERSION = 'S1';
+var APP_VERSION = 'S2';
 // Per-app settings (a separate build may replace this line): storage key prefix, display name, built-in approved memorized list
-var APP = {store:'entrysally.', name:'Entry Sally', builtinMem:[{"name": "SAC", "type": "expense", "entity": "", "payee": "SAC", "account": "", "to_account": "", "category": "SAC", "currency": "USD", "memo": ""}, {"name": "Deposit - Rent 208", "type": "deposit", "entity": "", "payee": "Deposit - Rent 208", "account": "", "to_account": "", "category": "Apr 208 Rent", "currency": "USD", "memo": ""}, {"name": "419 M Maintenance", "type": "expense", "entity": "", "payee": "419 M Maintenance", "account": "", "to_account": "", "category": "419 Condo Mes", "currency": "USD", "memo": ""}, {"name": "208 M Maintenance", "type": "expense", "entity": "", "payee": "208 M Maintenance", "account": "", "to_account": "", "category": "208 Condo Mes", "currency": "USD", "memo": ""}, {"name": "FPL 419", "type": "expense", "entity": "", "payee": "FPL 419", "account": "", "to_account": "", "category": "FPL 419", "currency": "USD", "memo": ""}, {"name": "Printed Check Image Fee", "type": "expense", "entity": "", "payee": "Printed Check Image Fee", "account": "", "to_account": "", "category": "Gasto", "currency": "USD", "memo": ""}, {"name": "Miami-Dade Tax Collector", "type": "expense", "entity": "", "payee": "Miami-Dade Tax Collector", "account": "", "to_account": "", "category": "Impuesto Prop 419", "currency": "USD", "memo": ""}, {"name": "Miami-Dade Tax Collector 208", "type": "expense", "entity": "", "payee": "Miami-Dade Tax Collector 208", "account": "", "to_account": "", "category": "Impuesto Prop 208", "currency": "USD", "memo": ""}, {"name": "Wire Transfer Fata Morgana", "type": "deposit", "entity": "", "payee": "Wire Transfer Fata Morgana", "account": "", "to_account": "", "category": "[Accionista]", "currency": "USD", "memo": ""}, {"name": "Wire Transfer Incoming Fee", "type": "expense", "entity": "", "payee": "Wire Transfer Incoming Fee", "account": "", "to_account": "", "category": "Gasto", "currency": "USD", "memo": ""}]};
+var APP = {store:'entrysally.', name:'Entry Sally', builtinMem:null};
 var MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 // ---------- storage ----------
@@ -116,7 +116,10 @@ function save(k, v){ localStorage.setItem(APP.store+k, JSON.stringify(v)); }
 var mem = load('mem', []);
 if(!Array.isArray(mem)) mem=[];
 (function(){ var ch=false; mem.forEach(function(m){ if('amount' in m){ delete m.amount; ch=true; } }); if(ch) save('mem', mem); })(); // memorized items never keep an amount
-var pendingImport=null, memFlash='';
+var pendingImport=null, memFlash='', pendingLink='', listFlash='', deferredInstall=null;
+window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); deferredInstall=e; });
+function isStandalone(){ try{ return navigator.standalone===true || matchMedia('(display-mode: standalone)').matches; }catch(e){ return false; } }
+function isIOS(){ return /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1); }
 var lists = load('lists_v2', null);
 if(!lists){ lists = JSON.parse(JSON.stringify(SEED)); save('lists_v2', lists); }
 ['entities','accounts','categories','payees'].forEach(function(k){ if(!lists[k]) lists[k] = SEED[k].slice(); });
@@ -175,6 +178,8 @@ function renderInner(){
   if(screen==='memlist') return renderMemList();
   if(screen==='memmanage') return renderMemManage();
   if(screen==='memimport') return renderMemImport();
+  if(screen==='meminstall') return renderMemInstall();
+  if(screen==='mempaste') return renderMemPaste();
   if(screen==='home') return renderHome();
   if(screen==='field') return renderField();
   if(screen==='summary') return renderSummary();
@@ -192,12 +197,55 @@ function renderHome(){
     '<button class="big" data-t="expense">Expense</button>'+
     '<button class="big alt" data-t="deposit">Deposit</button>'+
     '<button class="big alt2" data-t="transfer">Transfer</button>'+
-    '<button class="big alt3" id="toMem">⭐ Memorized'+(mem.length?' ('+mem.length+')':'')+'</button>'+
+    (mem.length?'<button class="big alt3" id="toMem">⭐ Memorized ('+mem.length+')</button>':'<button class="big alt3" id="pasteMem">📋 Paste my list</button>')+
     '<div class="nav"><button class="back" id="toList">Saved entries &amp; export'+(n?' ('+n+' new)':'')+'</button><div class="ver">Version '+APP_VERSION+'</div></div>';
   flash='';
   app.querySelectorAll('[data-t]').forEach(function(b){ b.onclick=function(){ startEntry(b.dataset.t); }; });
   $('toList').onclick=function(){ screen='list'; render(); };
-  $('toMem').onclick=function(){ screen='memlist'; render(); };
+  if($('toMem')) $('toMem').onclick=function(){ screen='memlist'; render(); };
+  if($('pasteMem')) $('pasteMem').onclick=pasteMyList;
+}
+// ---------- private list: copy (from the link page) and paste (in the installed app) ----------
+function addImported(list){
+  var added=0; list.forEach(function(m){ var old=mem.find(function(x){ return x.name.toLowerCase()===m.name.toLowerCase(); }); if(old){ var id=old.id; Object.assign(old,m); old.id=id; } else { mem.push(m); added++; }
+    MEM_KEYS.forEach(function(k){ if(m[k] && k!=='memo') remember(k,m[k]); }); });
+  saveMem(); return list.length;
+}
+function copyText(t){
+  var done=false;
+  try{ var ta=document.createElement('textarea'); ta.value=t; ta.setAttribute('readonly',''); ta.style.cssText='position:fixed;top:0;left:0;opacity:0;font-size:16px'; document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0,t.length); done=document.execCommand('copy'); document.body.removeChild(ta); }catch(e){}
+  try{ if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).catch(function(){}); }catch(e){}
+  return done;
+}
+function pasteMyList(){
+  function manual(msg){ listFlash=msg||''; screen='mempaste'; render(); }
+  if(!(navigator.clipboard && navigator.clipboard.readText)) return manual();
+  navigator.clipboard.readText().then(function(t){
+    var list; try{ list=decodeMemPayload(t); }catch(e){ return manual('The copied text is not a list. Open the link again and tap “Copy my list”.'); }
+    var n=addImported(list); listFlash='✓ '+n+' added'; screen='memlist'; render();
+  }, function(){ manual(); });
+}
+function renderMemPaste(){
+  app.innerHTML = hdr('Paste')+'<h1 class="sm">📋 Paste my list</h1>'+
+    (listFlash?'<p class="hint" style="color:#a33">'+esc(listFlash)+'</p>':'')+
+    '<p class="hint" style="font-size:19px;color:#111;margin:0 0 8px">Press and hold inside the box, then tap <b>Paste</b>.</p>'+
+    '<textarea id="txt" placeholder="Press and hold here" style="min-height:140px;font-size:18px"></textarea><p class="hint" id="err"></p>'+
+    '<div class="nav tight"><div class="btns"><button class="b-bk" id="back">Back</button></div></div>';
+  listFlash='';
+  function tryIt(){ var t=$('txt').value; if(!t.trim()) return; try{ var n=addImported(decodeMemPayload(t)); listFlash='✓ '+n+' added'; screen='memlist'; render(); }catch(e){ $('err').textContent='That is not a list. Open the link again and tap “Copy my list”.'; } }
+  $('txt').addEventListener('input', tryIt); $('txt').addEventListener('paste', function(){ setTimeout(tryIt,0); });
+  $('back').onclick=function(){ screen='home'; render(); };
+}
+function renderMemInstall(){
+  var how = deferredInstall ? '<button class="big" id="inst">Install the app</button>' :
+    isIOS() ? '<p class="hint" style="font-size:20px;color:#111">Tap <b>Share</b> <span style="font-size:24px">⬆︎</span> at the bottom of the screen, then <b>Add to Home Screen</b>, then <b>Add</b>.</p>' :
+    '<p class="hint" style="font-size:20px;color:#111">Tap the menu <b>⋮</b> at the top right, then <b>Install app</b> or <b>Add to Home screen</b>.</p>';
+  app.innerHTML = hdr('')+'<div class="okmsg" style="font-size:20px">✓ Your list is copied.</div>'+
+    '<h1 class="sm">Now put '+esc(APP.name)+' on your home screen</h1>'+how+
+    '<p class="hint" style="font-size:19px;color:#111">Then open <b>'+esc(APP.name)+'</b> from the home screen. If it shows <b>📋 Paste my list</b>, tap it (and tap <b>Paste</b> or <b>Allow</b> if asked).</p>'+
+    '<div class="nav tight"><div class="btns"><button class="b-bk" id="here">Use it here instead</button></div></div>';
+  if($('inst')) $('inst').onclick=function(){ var d=deferredInstall; deferredInstall=null; d.prompt(); d.userChoice.then(function(){ render(); }, function(){ render(); }); };
+  $('here').onclick=function(){ screen='memlist'; render(); };
 }
 function startEntry(t){
   draft = {type:t, step:0, v:{currency: last.currency||'ARS', date: today()}};
@@ -418,11 +466,12 @@ function recall(id){
   save('draft',draft); render(); window.scrollTo(0,0);
 }
 function renderMemList(){
-  var h = hdr(mem.length?'Tap one to use it':'')+'<h1 class="sm mh">⭐ Memorized'+(mem.length?' ('+mem.length+')':'')+'</h1>';
+  var h = hdr(listFlash || (mem.length?'Tap one to use it':''))+'<h1 class="sm mh">⭐ Memorized'+(mem.length?' ('+mem.length+')':'')+'</h1>';
   if(!mem.length) h += '<div class="scrollarea"><p class="hint" style="font-size:18px;color:#111">Nothing memorized yet.</p><p class="hint">After you save an entry, tap “⭐ Memorize this”. It will appear here for next time.</p></div>';
   else h += '<div class="scrollarea" id="memscroll">'+mem.map(function(m){ return '<button class="memit" data-m="'+esc(m.id)+'"><span class="n">'+esc(m.name)+'</span><span class="d">'+esc(memDesc(m))+'</span></button>'; }).join('')+'</div>';
   h += '<div class="nav tight"><div class="btns"><button class="b-bk" id="manage">Manage</button><button class="b-bk" id="back">Back</button></div><div class="ver">Version '+APP_VERSION+'</div></div>';
   app.innerHTML=h;
+  listFlash='';
   app.querySelectorAll('[data-m]').forEach(function(b){ b.onclick=function(){ recall(b.dataset.m); }; });
   $('manage').onclick=function(){ screen='memmanage'; render(); };
   $('back').onclick=function(){ screen='home'; render(); };
@@ -480,6 +529,17 @@ function decodeMemPayload(txt){
 }
 function renderMemImport(){
   var h = hdr('Import')+'<h1 class="sm">Import memorized</h1>';
+  if(pendingImport && pendingLink){
+    h = hdr('Your list')+'<h1 class="sm mh">⭐ Your list ('+pendingImport.length+')</h1>'+
+      '<button class="big" id="add" style="margin:0 0 8px">📋 Copy my list</button>'+
+      '<div class="scrollarea" style="max-height:45vh">'+pendingImport.map(function(m){ return '<div class="memit" style="background:#f6f6f6;border-color:#bbb"><span class="n">'+esc(m.name)+'</span><span class="d">'+esc(memDesc(m))+'</span></div>'; }).join('')+'</div>'+
+      '<div class="nav tight"><div class="btns"><button class="b-bk" id="cancel">Cancel</button></div></div>';
+    app.innerHTML=h;
+    $('add').onclick=function(){ var link=pendingLink; copyText(link); addImported(pendingImport); pendingImport=null; pendingLink='';
+      if(isStandalone()){ listFlash='✓ Saved'; screen='memlist'; } else screen='meminstall'; render(); };
+    $('cancel').onclick=function(){ pendingImport=null; pendingLink=''; screen='home'; render(); };
+    return;
+  }
   if(pendingImport){
     h += '<p class="hint" style="margin:0 0 8px;font-size:18px;color:#111">Add these '+pendingImport.length+' memorized items?</p><div class="card">'+
       pendingImport.map(function(m){ return '<div class="ln"><b>'+esc(m.name)+'</b> · '+esc(memDesc(m))+'</div>'; }).join('')+'</div>'+
@@ -503,9 +563,9 @@ function renderMemImport(){
 }
 function checkHashImport(){
   if(!/^#mem=/.test(location.hash)) return false;
-  var raw=location.hash.slice(5);
+  var raw=location.hash.slice(5); pendingLink=location.origin+location.pathname+'#mem='+raw;
   try{ history.replaceState(history.state,'',location.pathname+location.search); }catch(e){}
-  try{ pendingImport=decodeMemPayload(raw); return true; }catch(e){ flash='Could not read the memorized list link.'; return false; }
+  try{ pendingImport=decodeMemPayload(raw); return true; }catch(e){ pendingLink=''; flash='Could not read the memorized list link.'; return false; }
 }
 
 // ---------- list & export ----------
@@ -578,7 +638,7 @@ function navSync(){
   if(screen==='home') return rewind(0);
   if(screen==='saved') return rewind(0, snap());
   for(var i=top-1;i>=0;i--){ if(stk[i].k===k) return rewind(i); }
-  if(stk[top].s==='memimport') return rewind(top-1, snap()); // the import screen is not kept in Back history
+  if(stk[top].s==='memimport' || stk[top].s==='meminstall') return rewind(top-1, snap()); // the import screen is not kept in Back history
   doPush(snap());
 }
 window.addEventListener('popstate', function(ev){

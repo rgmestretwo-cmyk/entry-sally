@@ -2,7 +2,7 @@
   "id": "/entry-sally/",
   "name": "Entry Sally",
   "short_name": "Entry Sally",
-  "description": "Sally's offline expense, deposit and transfer entry",
+  "description": "Offline expense, deposit and transfer entry",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
