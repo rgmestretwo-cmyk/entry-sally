@@ -1,0 +1,630 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2c4f86">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Entry Sally">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<title>Entry Sally</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;background:#fff;color:#111;font-family:-apple-system,system-ui,"Segoe UI",Roboto,Arial,sans-serif}
+body{font-size:22px;padding:0}
+#app{max-width:560px;margin:0 auto;padding:calc(env(safe-area-inset-top, 0px) + 12px) 18px calc(env(safe-area-inset-bottom, 0px) + 12px);min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+header .t{font-weight:700;font-size:22px;color:#1f5f3f}
+header .s{font-size:17px;color:#666}
+h1{font-size:34px;margin:8px 0 18px;line-height:1.15}
+.step{font-size:17px;color:#666;margin-top:4px}
+button{font:inherit;border:0;border-radius:14px;cursor:pointer;touch-action:manipulation}
+.big{display:block;width:100%;padding:22px 16px;margin:0 0 14px;font-size:28px;font-weight:700;background:#1f5f3f;color:#fff}
+.big.alt{background:#2c4f86}.big.alt2{background:#8a4b12}
+.opt{display:block;width:100%;text-align:left;padding:16px 18px;margin:0 0 10px;font-size:24px;background:#eef3ef;color:#111;border:3px solid #eef3ef}
+.opt.sel{border-color:#1f5f3f;background:#d7eadc;font-weight:700}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px}
+.chip{padding:10px 14px;font-size:20px;background:#eef3ef;color:#111;border-radius:22px}
+input,select{font:inherit;font-size:28px;width:100%;padding:16px;border:3px solid #999;border-radius:14px;background:#fff;color:#111}
+input:focus{outline:none;border-color:#1f5f3f}
+.row{display:flex;gap:10px}
+.cur{flex:0 0 auto;padding:16px 18px;font-size:24px;font-weight:700;background:#eef3ef;color:#111;border:3px solid #eef3ef}
+.cur.sel{border-color:#1f5f3f;background:#d7eadc}
+.nav{margin-top:auto;padding-top:18px}
+.nav .row button{flex:1}
+.next{padding:20px;font-size:28px;font-weight:700;background:#1f5f3f;color:#fff;width:100%}
+.dk{padding:18px;font-size:22px;background:#f3e6c8;color:#111;width:100%}
+.back{padding:14px;font-size:20px;background:#eee;color:#111;width:100%}
+.link{background:none;color:#2c4f86;font-size:19px;padding:8px 0;text-decoration:underline}
+.card{border:2px solid #1f5f3f;border-radius:12px;padding:8px 12px;font-size:16px;line-height:1.35;background:#f8fbf8}
+.card .ln{padding:1px 0;overflow-wrap:anywhere}
+.card .ln b{font-weight:600;color:#333}
+.card .muted{font-size:inherit}
+h1.sm{font-size:24px;margin:2px 0 10px}
+.hint{font-size:15px;color:#666;margin:8px 0 0}
+.nav.tight{margin-top:0;padding-top:12px}
+.btns{display:flex;gap:8px;margin-top:8px}
+.btns button{flex:1;padding:14px 6px;font-size:19px;font-weight:600}
+.b-go{background:#1f5f3f;color:#fff}.b-ed{background:#f3e6c8;color:#111}.b-del{background:#b3261e;color:#fff}.b-bk{background:#eee;color:#111}
+.warn{background:#fff1d6;border:3px solid #c98a12;border-radius:14px;padding:14px;margin:12px 0;font-size:21px}
+.item{margin:0 0 8px;cursor:pointer;position:relative}
+.item .editcue{position:absolute;top:8px;right:10px;font-size:15px;font-weight:700;color:#1f5f3f;background:#e3f2e6;border:1px solid #9bb5a3;border-radius:10px;padding:2px 8px}
+.item .card .ln:first-child{padding-right:70px}
+.tapban{position:sticky;top:0;z-index:5;margin:0 -18px 12px;padding:10px 18px;font-size:18px;font-weight:700;color:#111;background:#ffe27a;border-bottom:2px solid #c98a12;box-shadow:0 2px 4px rgba(0,0,0,.12)}
+.item .card{border-color:#9bb5a3}
+.item .st{font-size:13px;color:#777;margin-top:2px}
+.muted{color:#777;font-size:17px}
+.ver{text-align:center;color:#666;font-size:14px;margin-top:8px;line-height:1.2}
+/* home screen: compact so it always fits without scrolling */
+h1.q{font-size:28px;margin:2px 0 12px;line-height:1.15}
+.home .big{padding:15px 12px;margin:0 0 10px;font-size:26px;line-height:1.15;min-height:56px}
+.home .nav{padding-top:10px}
+.home .nav .back{min-height:48px;padding:10px;font-size:19px}
+@media (max-height:720px){
+  header{margin-bottom:4px}
+  h1.q{font-size:24px;margin:0 0 8px}
+  .home .big{padding:11px 10px;font-size:23px;min-height:48px;margin-bottom:8px}
+  .home .nav{padding-top:6px}
+  .home .nav .back{min-height:46px;padding:8px;font-size:18px}
+  .ver{margin-top:4px}
+}
+.del{background:#b3261e}
+.big.alt3{background:#5b3f8c}
+#app.fixedh{height:100vh;height:100dvh;min-height:0;overflow:hidden}
+.scrollarea{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;margin:0 -4px;padding:0 4px}
+.memit{display:block;width:100%;text-align:left;padding:2px 10px;margin:0 0 3px;background:#fff6d6;color:#111;border:1px solid #c98a12;border-radius:10px;min-height:40px}
+.memit .n{display:block;font-size:17px;font-weight:700;line-height:1.12}
+.memit .d{display:block;font-size:13.5px;color:#555;line-height:1.12}
+h1.mh{font-size:22px;margin:0 0 6px}
+.b-mem{background:#5b3f8c;color:#fff}
+.mrow{margin:0 0 12px}
+.mrow .btns button{padding:10px 4px;font-size:17px;min-height:44px}
+textarea{font:inherit;font-size:16px;width:100%;min-height:120px;padding:10px;border:2px solid #999;border-radius:12px}
+.card .tapln{cursor:pointer;background:#fff6d6;border:1px dashed #c98a12;border-radius:8px;padding:4px 6px;margin:2px -6px 0}
+.card .tapln .cue{color:#1f5f3f;font-weight:700;white-space:nowrap}
+.gatemsg{display:none;background:#fff1d6;border:2px solid #c98a12;border-radius:12px;padding:8px 10px;font-size:16px;font-weight:600;line-height:1.3;margin:8px 0 0;color:#111}
+.okmsg{background:#e3f2e6;border:2px solid #1f5f3f;border-radius:12px;padding:8px 10px;font-size:16px;font-weight:600;margin:8px 0 0}
+.ok{color:#1f5f3f;font-weight:700}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+(function(){
+'use strict';
+var SEED = { entities: [], accounts: [], categories: [], payees: [] };
+var ALIASES = {};
+var FIELDS = {
+  expense: [['entity','Entity','entity'],['date','Date','date'],['check','Check #','check'],['payee','Payee','payee'],['account','Account','account'],['category','Category','category'],['amount','Amount','amount'],['memo','Memo','memo']],
+  deposit: [['entity','Entity','entity'],['date','Date','date'],['payee','From','payee'],['account','Account','account'],['category','Category','category'],['amount','Amount','amount'],['memo','Memo','memo']],
+  transfer:[['entity','Entity','entity'],['date','Date','date'],['account','From account','account'],['to_account','To account','account'],['amount','Amount','amount'],['memo','Memo','memo']]
+};
+var PROMPT = {entity:'Entity?',date:'Date?',check:'Check #?',payee:'Payee?',account:'Account?',to_account:'To account?',category:'Category?',amount:'Amount?',memo:'Memo?'};
+var TYPE_LABEL = {expense:'Expense',deposit:'Deposit',transfer:'Transfer'};
+var APP_VERSION = 'S1';
+// Per-app settings (a separate build may replace this line): storage key prefix, display name, built-in approved memorized list
+var APP = {store:'entrysally.', name:'Entry Sally', builtinMem:[{"name": "SAC", "type": "expense", "entity": "", "payee": "SAC", "account": "", "to_account": "", "category": "SAC", "currency": "USD", "memo": ""}, {"name": "Deposit - Rent 208", "type": "deposit", "entity": "", "payee": "Deposit - Rent 208", "account": "", "to_account": "", "category": "Apr 208 Rent", "currency": "USD", "memo": ""}, {"name": "419 M Maintenance", "type": "expense", "entity": "", "payee": "419 M Maintenance", "account": "", "to_account": "", "category": "419 Condo Mes", "currency": "USD", "memo": ""}, {"name": "208 M Maintenance", "type": "expense", "entity": "", "payee": "208 M Maintenance", "account": "", "to_account": "", "category": "208 Condo Mes", "currency": "USD", "memo": ""}, {"name": "FPL 419", "type": "expense", "entity": "", "payee": "FPL 419", "account": "", "to_account": "", "category": "FPL 419", "currency": "USD", "memo": ""}, {"name": "Printed Check Image Fee", "type": "expense", "entity": "", "payee": "Printed Check Image Fee", "account": "", "to_account": "", "category": "Gasto", "currency": "USD", "memo": ""}, {"name": "Miami-Dade Tax Collector", "type": "expense", "entity": "", "payee": "Miami-Dade Tax Collector", "account": "", "to_account": "", "category": "Impuesto Prop 419", "currency": "USD", "memo": ""}, {"name": "Miami-Dade Tax Collector 208", "type": "expense", "entity": "", "payee": "Miami-Dade Tax Collector 208", "account": "", "to_account": "", "category": "Impuesto Prop 208", "currency": "USD", "memo": ""}, {"name": "Wire Transfer Fata Morgana", "type": "deposit", "entity": "", "payee": "Wire Transfer Fata Morgana", "account": "", "to_account": "", "category": "[Accionista]", "currency": "USD", "memo": ""}, {"name": "Wire Transfer Incoming Fee", "type": "expense", "entity": "", "payee": "Wire Transfer Incoming Fee", "account": "", "to_account": "", "category": "Gasto", "currency": "USD", "memo": ""}]};
+var MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+// ---------- storage ----------
+function load(k, d){ try{ var v = localStorage.getItem(APP.store+k); return v ? JSON.parse(v) : d; }catch(e){ return d; } }
+function save(k, v){ localStorage.setItem(APP.store+k, JSON.stringify(v)); }
+var mem = load('mem', []);
+if(!Array.isArray(mem)) mem=[];
+(function(){ var ch=false; mem.forEach(function(m){ if('amount' in m){ delete m.amount; ch=true; } }); if(ch) save('mem', mem); })(); // memorized items never keep an amount
+var pendingImport=null, memFlash='';
+var lists = load('lists_v2', null);
+if(!lists){ lists = JSON.parse(JSON.stringify(SEED)); save('lists_v2', lists); }
+['entities','accounts','categories','payees'].forEach(function(k){ if(!lists[k]) lists[k] = SEED[k].slice(); });
+// Built-in approved memorized list: added only the very first time (if the user later deletes items, they stay deleted)
+if(APP.builtinMem && localStorage.getItem(APP.store+'mem')===null){
+  mem = APP.builtinMem.map(function(x,i){ var m={id:'b'+(i+1)}; for(var k in x) m[k]=x[k]; delete m.amount; return m; });
+  save('mem', mem);
+  mem.forEach(function(m){ ['payee','category','entity','account'].forEach(function(k){ if(m[k]){ var ln=k==='payee'?'payees':k==='category'?'categories':k==='entity'?'entities':'accounts'; if(lists[ln].indexOf(m[k])<0) lists[ln].push(m[k]); } }); });
+  save('lists_v2', lists);
+}
+var last = load('last', {});
+var entries = load('entries', []);
+var draft = load('draft', null);
+var screen = draft ? 'field' : 'home';
+var editing = false; // came from Fix
+var flash = '';
+try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist(); }catch(e){}
+
+function listFor(key){ return key==='entity'?'entities':(key==='account'||key==='to_account')?'accounts':key==='category'?'categories':key==='payee'?'payees':null; }
+function remember(key, val){
+  var ln = listFor(key); if(!ln || !val) return;
+  var a = lists[ln], i = a.findIndex(function(x){ return x.toLowerCase()===val.toLowerCase(); });
+  if(i>=0) a.splice(i,1);
+  a.unshift(val); save('lists_v2', lists);
+}
+function canon(key, val){
+  val = (val||'').trim(); if(!val) return '';
+  var al = ALIASES[val.toLowerCase()];
+  var ln = listFor(key);
+  if(al && ln && lists[ln].indexOf(al)>=0) return al;
+  if(ln){ var m = lists[ln].find(function(x){ return x.toLowerCase()===val.toLowerCase(); }); if(m) return m; }
+  return val;
+}
+
+// ---------- helpers ----------
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+function today(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function fmtDate(s){ if(!s) return ''; var p=s.split('-'); return MON[+p[1]-1]+' '+(+p[2])+', '+p[0]; }
+function dayNum(s){ var p=s.split('-'); return Date.UTC(+p[0],+p[1]-1,+p[2])/864e5; }
+function parseAmt(s){ s=String(s||'').replace(/\s/g,''); if(!s) return ''; 
+  // accept 20.000,50 or 20,000.50 or 20000
+  if(/,\d{1,2}$/.test(s)) s=s.replace(/\./g,'').replace(',','.'); else s=s.replace(/,/g,'');
+  if(/^\d+\.\d{3}$/.test(s)) s=s.replace('.','');
+  var n=parseFloat(s); return isNaN(n)?'':String(Math.round(n*100)/100); }
+function fmtAmt(cur, a){ if(a===''||a==null) return '(blank)'; var n=+a; return (cur||'ARS')+' '+n.toLocaleString('en-US',{minimumFractionDigits:(n%1?2:0),maximumFractionDigits:2}); }
+function show(v){ return v ? esc(v) : '<span class="muted">(blank)</span>'; }
+function $(id){ return document.getElementById(id); }
+
+// ---------- render ----------
+var app = document.getElementById('app');
+function hdr(right){ return '<header><span class="t">'+esc(APP.name)+'</span><span class="s">'+(right||'')+'</span></header>'; }
+function render(){ renderInner(); navSync(); }
+function renderInner(){
+  gateReset();
+  app.className = screen==='home' ? 'home' : screen==='memlist' ? 'fixedh' : '';
+  if(screen==='memlist') return renderMemList();
+  if(screen==='memmanage') return renderMemManage();
+  if(screen==='memimport') return renderMemImport();
+  if(screen==='home') return renderHome();
+  if(screen==='field') return renderField();
+  if(screen==='summary') return renderSummary();
+  if(screen==='dup') return renderDup();
+  if(screen==='list') return renderList();
+  if(screen==='fixpick') return renderFixPick();
+  if(screen==='saved') return renderView(true);
+  if(screen==='view') return renderView(false);
+}
+function renderHome(){
+  var n = entries.filter(function(e){return !e.exported_at;}).length;
+  app.innerHTML = hdr(entries.length+' saved') +
+    (flash?'<div class="warn ok" style="border-color:#1f5f3f;background:#e3f2e6">'+esc(flash)+'</div>':'') +
+    '<h1 class="q">Expense, deposit, or transfer?</h1>'+
+    '<button class="big" data-t="expense">Expense</button>'+
+    '<button class="big alt" data-t="deposit">Deposit</button>'+
+    '<button class="big alt2" data-t="transfer">Transfer</button>'+
+    '<button class="big alt3" id="toMem">⭐ Memorized'+(mem.length?' ('+mem.length+')':'')+'</button>'+
+    '<div class="nav"><button class="back" id="toList">Saved entries &amp; export'+(n?' ('+n+' new)':'')+'</button><div class="ver">Version '+APP_VERSION+'</div></div>';
+  flash='';
+  app.querySelectorAll('[data-t]').forEach(function(b){ b.onclick=function(){ startEntry(b.dataset.t); }; });
+  $('toList').onclick=function(){ screen='list'; render(); };
+  $('toMem').onclick=function(){ screen='memlist'; render(); };
+}
+function startEntry(t){
+  draft = {type:t, step:0, v:{currency: last.currency||'ARS', date: today()}};
+  if(last.entity) draft.v.entity = last.entity;
+  editing=false; save('draft', draft); screen='field'; render();
+}
+function curField(){ return FIELDS[draft.type][draft.step]; }
+function renderField(){
+  var f = curField(), key=f[0], label=f[1], kind=f[2], fs=FIELDS[draft.type], v=draft.v[key];
+  var h = hdr(TYPE_LABEL[draft.type]+' · '+(draft.step+1)+' of '+fs.length) + '<h1>'+esc(key==='payee'&&draft.type==='deposit'?'From?':key==='account'&&draft.type==='transfer'?'From account?':key==='account'&&draft.type==='deposit'?'Into account?':PROMPT[key])+'</h1>';
+  if(kind==='entity' || kind==='account'){
+    var ln = listFor(key), opts = lists[ln].slice();
+    if(key==='to_account') opts = opts.filter(function(x){ return x!==draft.v.account; });
+    h += '<div id="opts">'+opts.map(function(o){ return '<button class="opt'+(o===v?' sel':'')+'" data-v="'+esc(o)+'">'+esc(o)+'</button>'; }).join('')+'</div>';
+    h += '<input id="inp" placeholder="Add new…" autocomplete="off" autocapitalize="words" value="">';
+  } else if(kind==='date'){
+    h += '<input id="inp" type="date" value="'+esc(v||today())+'">'+
+      '<div class="chips"><button class="chip" data-d="0">Today</button><button class="chip" data-d="-1">Yesterday</button></div>'+
+      '<div class="step" id="dshow">'+esc(fmtDate(v||today()))+'</div>';
+  } else if(kind==='amount'){
+    var c = draft.v.currency||'ARS';
+    h += '<div class="row"><button class="cur'+(c==='ARS'?' sel':'')+'" data-c="ARS">ARS</button><button class="cur'+(c==='USD'?' sel':'')+'" data-c="USD">USD</button>'+
+      '<input id="inp" inputmode="decimal" autocomplete="off" placeholder="0" value="'+esc(v||'')+'"></div>';
+  } else {
+    h += '<input id="inp" autocomplete="off" autocapitalize="'+(kind==='check'?'off':'sentences')+'" '+(kind==='check'?'inputmode="text"':'')+' placeholder="Type or tap the mic on the keyboard" value="'+esc(v||'')+'">';
+    if(kind==='check') h += '<div class="chips"><button class="chip" data-s="none">None</button></div>';
+    if(listFor(key)) h += '<div class="chips" id="sugg"></div>';
+  }
+  h += '<div class="nav"><button class="next" id="next">Next</button><div style="height:10px"></div>'+
+    '<button class="dk" id="dk">Don\'t know'+(last[key]?' → '+esc(key==='amount'?fmtAmt(last.currency,last[key]):key==='date'?fmtDate(last[key]):last[key]):' → blank')+'</button><div style="height:10px"></div>'+
+    '<div class="row"><button class="back" id="back">Back</button><button class="back" id="cancel">Cancel</button></div></div>';
+  app.innerHTML = h;
+  var inp = $('inp');
+  app.querySelectorAll('.opt').forEach(function(b){ b.onclick=function(){ draft.v[key]=b.dataset.v; advance(); }; });
+  app.querySelectorAll('[data-c]').forEach(function(b){ b.onclick=function(){ draft.v.currency=b.dataset.c; draft.v.amount=inp.value; save('draft',draft); renderField(); $('inp').focus(); }; });
+  app.querySelectorAll('[data-d]').forEach(function(b){ b.onclick=function(){ var d=new Date(); d.setDate(d.getDate()+(+b.dataset.d)); inp.value=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); $('dshow').textContent=fmtDate(inp.value); }; });
+  app.querySelectorAll('[data-s]').forEach(function(b){ b.onclick=function(){ draft.v[key]=b.dataset.s; advance(); }; });
+  if(kind==='date') inp.onchange=function(){ $('dshow').textContent=fmtDate(inp.value); };
+  var sg = $('sugg');
+  function fillSugg(){
+    if(!sg) return; var q=inp.value.trim().toLowerCase();
+    var a = lists[listFor(key)].filter(function(x){ return !q || x.toLowerCase().indexOf(q)>=0; }).slice(0, q?12:10);
+    sg.innerHTML = a.map(function(x){ return '<button class="chip" data-g="'+esc(x)+'">'+esc(x)+'</button>'; }).join('');
+    sg.querySelectorAll('[data-g]').forEach(function(b){ b.onclick=function(){ draft.v[key]=b.dataset.g; advance(); }; });
+  }
+  if(sg){ inp.oninput=fillSugg; fillSugg(); }
+  inp.onkeydown=function(e){ if(e.key==='Enter'){ e.preventDefault(); $('next').click(); } };
+  $('next').onclick=function(){
+    var val = inp.value;
+    if(kind==='entity'||kind==='account'){ val = val.trim() ? canon(key,val) : (draft.v[key]||''); }
+    else if(kind==='amount'){ val = parseAmt(val); }
+    else if(kind==='date'){ val = val || today(); }
+    else val = canon(key,val);
+    draft.v[key]=val; advance();
+  };
+  $('dk').onclick=function(){ draft.v[key] = last[key]||''; if(key==='amount'&&last.currency) draft.v.currency=last.currency; advance(); };
+  $('back').onclick=function(){ if(editing){ editing=false; screen='summary'; save('draft',draft); return render(); } if(draft.step>0){ draft.step--; save('draft',draft); render(); } else { draft=null; save('draft',null); screen='home'; render(); } };
+  $('cancel').onclick=function(){ if(confirm('Discard this entry?')){ draft=null; save('draft',null); screen='home'; render(); } };
+  if(kind!=='entity'&&kind!=='account'&&kind!=='date'){ setTimeout(function(){ try{inp.focus();}catch(e){} }, 50); }
+}
+function advance(){
+  if(editing){ editing=false; screen='summary'; }
+  else if(draft.step < FIELDS[draft.type].length-1){ draft.step++; }
+  else screen='summary';
+  save('draft', draft); render(); window.scrollTo(0,0);
+}
+function cardLines(e){
+  var L=[['Type',TYPE_LABEL[e.type]]];
+  FIELDS[e.type].forEach(function(f){
+    var k=f[0], v=e[k] !== undefined ? e[k] : (e.v?e.v[k]:'');
+    if(k==='date') v=fmtDate(v); else if(k==='amount') v=fmtAmt(e.currency||(e.v&&e.v.currency), v); else if(k==='check' && !v) v='';
+    L.push([f[1],v,k]);
+  });
+  return L;
+}
+function renderSummary(){
+  if(draft.memId) return renderMemSummary();
+  var e = flat(draft);
+  var h = hdr(draft.editId?'Editing saved entry':draft.fromMem?'⭐ From memorized':'Check and save')+'<h1 class="sm">'+(draft.editId?'Edit entry':'Summary')+'</h1>'+cardHTML(e, '', draft.fromMem?{memoTap:true}:null)+
+    '<div class="nav tight"><div class="btns"><button class="b-go" id="save">Save</button></div><div class="btns"><button class="b-ed" id="fix">Edit</button><button class="b-bk" id="cancel">Cancel</button></div></div>';
+  app.innerHTML=h;
+  $('save').onclick=function(){ var d=findDup(e); if(d){ screen='dup'; dupOf=d; render(); } else commit(e); };
+  $('fix').onclick=function(){ screen='fixpick'; renderFixPick(); };
+  if($('memoLine')) $('memoLine').onclick=function(){ draft.step=FIELDS[draft.type].findIndex(function(f){return f[0]==='memo';}); editing=true; screen='field'; save('draft',draft); render(); window.scrollTo(0,0); };
+  $('cancel').onclick=function(){
+    if(draft.editId){ if(confirm('Discard changes?')){ viewId=draft.editId; draft=null; save('draft',null); screen='view'; render(); } return; }
+    if(confirm('Discard this entry?')){ draft=null; save('draft',null); screen='home'; render(); } };
+}
+function cardHTML(e, extra, opt){ return '<div class="card">'+cardLines(e).map(function(l){
+    if(opt && opt.memoTap && l[2]==='memo') return '<div class="ln tapln" id="memoLine" role="button"><b>'+esc(l[0])+':</b> '+(l[1]?esc(l[1])+' <span class="cue">✎ (tap to change)</span>':'<span class="cue">✎ (tap to add)</span>')+'</div>';
+    return '<div class="ln"><b>'+esc(l[0])+':</b> '+(l[1]==='(blank)'?show(''):show(l[1]))+'</div>'; }).join('')+(extra||'')+'</div>'; }
+var viewId=null;
+function editSaved(id){
+  var e=entries.find(function(x){return x.id===id;}); if(!e) return;
+  var v={currency:e.currency||'ARS'}; FIELDS[e.type].forEach(function(f){ v[f[0]]=e[f[0]]||''; });
+  draft={type:e.type, step:0, v:v, editId:id}; editing=false; save('draft',draft); screen='fixpick'; render(); window.scrollTo(0,0);
+}
+function renderView(justSaved){
+  var e=entries.find(function(x){return x.id===viewId;});
+  if(!e){ screen=justSaved?'home':'list'; return render(); }
+  app.innerHTML = hdr(justSaved?'Saved':(e.exported_at?'Exported':'Not exported'))+'<h1 class="sm">'+(justSaved?'Saved ✓':'Saved entry')+'</h1>'+cardHTML(e)+
+    '<div class="nav tight">'+(justSaved?
+      '<div class="btns"><button class="b-go" id="done">Continue</button><button class="b-ed" id="edit">Edit</button></div>'+
+      (memFlash?'<div class="okmsg">'+esc(memFlash)+'</div>':'<div class="btns"><button class="b-mem" id="memo">⭐ Memorize this</button></div><div class="gatemsg" id="gm-memo" role="status" aria-live="polite"></div>')+
+      '<p class="hint">Continue for a new entry. Edit to change this one. To delete it later, use Saved entries.</p>':
+      '<div class="btns"><button class="b-ed" id="edit">Edit</button><button class="b-del" id="del">Delete</button><button class="b-bk" id="back">Back</button></div>')+'</div>';
+  $('edit').onclick=function(){ memFlash=''; editSaved(e.id); };
+  if(justSaved){ $('done').onclick=function(){ memFlash=''; screen='home'; render(); };
+    if($('memo')) $('memo').onclick=function(){ gateTap('memo', $('gm-memo'), this, function(){ var miss=memMissing(e); if(miss){ $('gm-memo').textContent=miss; } else memorize(e); }); }; }
+  else {
+    $('del').onclick=function(){ if(confirm('Delete this entry?')){ entries=entries.filter(function(x){return x.id!==e.id;}); save('entries',entries); screen='list'; render(); } };
+    $('back').onclick=function(){ screen='list'; render(); };
+  }
+  window.scrollTo(0,0);
+}
+function renderFixPick(){
+  app.className='';
+  var fs=FIELDS[draft.type];
+  var lines=cardLines(flat(draft)).slice(1);
+  app.innerHTML = hdr('Edit')+'<h1>Edit which?</h1>'+fs.map(function(f,i){ if(draft.memId && (f[0]==='date'||f[0]==='check'||f[0]==='amount')) return ''; var v=lines[i][1]; return '<button class="opt" data-i="'+i+'"><b>'+esc(f[1])+':</b> '+(v&&v!=='(blank)'?esc(v):'<span class="muted">(blank)</span>')+'</button>'; }).join('')+
+    '<button class="opt" data-i="type"><b>Type:</b> '+TYPE_LABEL[draft.type]+'</button><div class="nav"><button class="next" id="back">Back to card</button></div>';
+  app.querySelectorAll('[data-i]').forEach(function(b){ b.onclick=function(){
+    if(b.dataset.i==='type'){ var t=prompt('Type: expense, deposit or transfer?', draft.type); t=(t||'').trim().toLowerCase(); if(FIELDS[t]){ draft.type=t; save('draft',draft);} screen='summary'; return render(); }
+    draft.step=+b.dataset.i; editing=true; screen='field'; save('draft',draft); render(); }; });
+  $('back').onclick=function(){ screen='summary'; render(); };
+  navSync();
+}
+function flat(d){
+  var e={type:d.type, entity:'',date:'',check:'',payee:'',account:'',to_account:'',category:'',currency:d.v.currency||'ARS',amount:'',memo:''};
+  FIELDS[d.type].forEach(function(f){ e[f[0]] = d.v[f[0]]||''; });
+  return e;
+}
+var dupOf=null;
+function findDup(e){
+  if(e.amount==='') return null;
+  return entries.find(function(x){
+    if(draft && draft.editId && x.id===draft.editId) return false;
+    if(x.type!==e.type || x.entity!==e.entity || +x.amount!==+e.amount || x.currency!==e.currency) return false;
+    if(!x.date||!e.date|| Math.abs(dayNum(x.date)-dayNum(e.date))>3) return false;
+    if(e.type==='transfer') return x.account===e.account && x.to_account===e.to_account;
+    return (x.payee||'').toLowerCase()===(e.payee||'').toLowerCase();
+  }) || null;
+}
+function renderDup(){
+  var x=dupOf;
+  app.innerHTML = hdr('Possible duplicate')+'<h1 class="sm">Already saved?</h1><p class="hint" style="margin:0 0 6px">Looks like this saved one:</p>'+cardHTML(x)+
+    '<div class="nav tight"><div class="btns"><button class="b-go" id="yes">Save anyway</button><button class="b-bk" id="no">Back</button></div></div>';
+  $('yes').onclick=function(){ commit(flat(draft)); };
+  $('no').onclick=function(){ screen='summary'; render(); };
+}
+function commit(e){
+  var old = draft && draft.editId ? entries.find(function(x){return x.id===draft.editId;}) : null;
+  if(old){
+    e.id=old.id; e.created_at=old.created_at; e.exported_at=''; e.edited_at=new Date().toISOString();
+    entries[entries.indexOf(old)]=e;
+  } else {
+    e.id = Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+    e.created_at = new Date().toISOString();
+    e.exported_at = '';
+    entries.push(e);
+  }
+  save('entries', entries);
+  FIELDS[e.type].forEach(function(f){ if(e[f[0]]) last[f[0]]=e[f[0]]; }); last.currency=e.currency;
+  save('last', last);
+  remember('entity',e.entity); remember('account',e.account); if(e.to_account) remember('to_account',e.to_account);
+  if(e.payee) remember('payee',e.payee); if(e.category) remember('category',e.category);
+  draft=null; save('draft',null); viewId=e.id; memFlash=''; screen='saved'; render();
+}
+
+// ---------- three-tap gate for user-made memorized changes ----------
+var GATE_MSG=['It is recommended that you leave this to the accountant who will be receiving and inspecting your entries. But if you insist, tap the star again.','Are you absolutely sure?','Good luck.'];
+var gate={k:null,n:0};
+function gateReset(){ gate={k:null,n:0}; }
+function gateTap(k, msgEl, btn, action){
+  if(gate.k!==k){ app.querySelectorAll('.gatemsg').forEach(function(x){ x.textContent=''; x.style.display='none'; }); gate={k:k,n:0}; }
+  gate.n++;
+  if(msgEl){ msgEl.textContent=GATE_MSG[gate.n-1]; msgEl.style.display='block'; }
+  if(gate.n>=3){ btn.disabled=true; gateReset(); var sc=screen; setTimeout(function(){ if(screen===sc && document.body.contains(btn)) action(); }, 900); }
+}
+// ---------- memorized transactions (per phone, starts empty) ----------
+var MEM_KEYS=['entity','payee','account','to_account','category','memo'];
+function saveMem(){ save('mem', mem); }
+function memName(m){
+  if(m.type==='transfer') return [m.account,m.to_account].filter(Boolean).join(' → ') || 'Transfer';
+  return m.payee || m.category || TYPE_LABEL[m.type];
+}
+function memDesc(m){
+  var a=[]; if(m.type!=='expense') a.push(TYPE_LABEL[m.type]);
+  if(m.type==='transfer'){ if(m.entity) a.push(m.entity); } else { if(m.category) a.push(m.category); if(m.account) a.push(m.account); }
+  return a.join(' · ');
+}
+function memCardHTML(m, extra){
+  var L=[['Name',m.name],['Type',TYPE_LABEL[m.type]]];
+  FIELDS[m.type].forEach(function(f){ var k=f[0]; if(k==='date'||k==='check'||k==='amount') return; L.push([f[1],m[k]||'']); });
+  return '<div class="card">'+L.map(function(l){ return '<div class="ln"><b>'+esc(l[0])+':</b> '+show(l[1])+'</div>'; }).join('')+(extra||'')+'</div>';
+}
+function memMissing(e, memoOptional){ // memoOptional: approved imported items may have a blank memo
+  if(e.type==='transfer') return (e.account&&e.to_account&&(e.memo||memoOptional)) ? '' : 'From account, to account and memo are needed to memorize.';
+  return (e.payee&&e.category&&(e.memo||memoOptional)) ? '' : (e.type==='deposit'?'From':'Payee')+', category and memo are needed to memorize.';
+}
+function memFromEntry(e){
+  var m={id:'m'+Date.now().toString(36)+Math.random().toString(36).slice(2,5), type:e.type, currency:e.currency||'ARS'};
+  MEM_KEYS.forEach(function(k){ m[k] = FIELDS[e.type].some(function(f){return f[0]===k;}) ? (e[k]||'') : ''; });
+  m.name = memName(m); return m;
+}
+function sameMem(a,b){ return a.type===b.type && ['entity','payee','account','to_account','category'].every(function(k){ return (a[k]||'').toLowerCase()===(b[k]||'').toLowerCase(); }); }
+function memorize(e){
+  var m=memFromEntry(e), old=mem.find(function(x){ return sameMem(x,m); });
+  if(old){ old.currency=m.currency; old.memo=m.memo; m=old; } else mem.push(m);
+  saveMem(); memFlash='⭐ Memorized as "'+m.name+'". It is now under Memorized on the first screen.'; screen='saved'; render();
+}
+function recall(id){
+  var m=mem.find(function(x){return x.id===id;}); if(!m) return;
+  var v={currency:m.currency||'ARS', date:today(), check:'', amount:''};
+  MEM_KEYS.forEach(function(k){ v[k]=m[k]||''; });
+  draft={type:m.type, step:0, v:v, fromMem:id};
+  draft.step=FIELDS[m.type].findIndex(function(f){return f[0]==='amount';}); editing=true; screen='field'; // always ask the amount first
+  save('draft',draft); render(); window.scrollTo(0,0);
+}
+function renderMemList(){
+  var h = hdr(mem.length?'Tap one to use it':'')+'<h1 class="sm mh">⭐ Memorized'+(mem.length?' ('+mem.length+')':'')+'</h1>';
+  if(!mem.length) h += '<div class="scrollarea"><p class="hint" style="font-size:18px;color:#111">Nothing memorized yet.</p><p class="hint">After you save an entry, tap “⭐ Memorize this”. It will appear here for next time.</p></div>';
+  else h += '<div class="scrollarea" id="memscroll">'+mem.map(function(m){ return '<button class="memit" data-m="'+esc(m.id)+'"><span class="n">'+esc(m.name)+'</span><span class="d">'+esc(memDesc(m))+'</span></button>'; }).join('')+'</div>';
+  h += '<div class="nav tight"><div class="btns"><button class="b-bk" id="manage">Manage</button><button class="b-bk" id="back">Back</button></div><div class="ver">Version '+APP_VERSION+'</div></div>';
+  app.innerHTML=h;
+  app.querySelectorAll('[data-m]').forEach(function(b){ b.onclick=function(){ recall(b.dataset.m); }; });
+  $('manage').onclick=function(){ screen='memmanage'; render(); };
+  $('back').onclick=function(){ screen='home'; render(); };
+}
+function renderMemManage(){
+  gateReset();
+  var h = hdr(mem.length+' memorized')+'<h1 class="sm">Manage memorized</h1>'+
+    '<div class="btns" style="margin:0 0 12px"><button class="b-bk" id="imp">Import list</button><button class="b-bk" id="back">Back</button></div>';
+  if(!mem.length) h += '<p class="hint">No memorized items. Save an entry and tap “⭐ Memorize this”, or import an approved list.</p>';
+  mem.forEach(function(m){
+    h += '<div class="mrow">'+memCardHTML(m)+'<div class="btns"><button class="b-bk" data-rn="'+esc(m.id)+'">⭐ Rename</button><button class="b-ed" data-ed="'+esc(m.id)+'">⭐ Edit</button><button class="b-del" data-dl="'+esc(m.id)+'">Delete</button></div><div class="gatemsg" id="gm-'+esc(m.id)+'" role="status" aria-live="polite"></div></div>';
+  });
+  app.innerHTML=h;
+  $('imp').onclick=function(){ pendingImport=null; screen='memimport'; render(); };
+  $('back').onclick=function(){ screen='memlist'; render(); };
+  app.querySelectorAll('[data-rn]').forEach(function(b){ b.onclick=function(){ gateTap('rn:'+b.dataset.rn, $('gm-'+b.dataset.rn), b, function(){ var m=mem.find(function(x){return x.id===b.dataset.rn;}); var n=prompt('Name:', m.name); n=(n||'').trim(); if(n){ m.name=n.slice(0,60); saveMem(); renderMemManage(); }  else { renderMemManage(); } }); }; });
+  app.querySelectorAll('[data-dl]').forEach(function(b){ b.onclick=function(){ var m=mem.find(function(x){return x.id===b.dataset.dl;}); if(confirm('Delete "'+m.name+'"?')){ mem=mem.filter(function(x){return x!==m;}); saveMem(); renderMemManage(); } }; });
+  app.querySelectorAll('[data-ed]').forEach(function(b){ b.onclick=function(){ gateTap('ed:'+b.dataset.ed, $('gm-'+b.dataset.ed), b, function(){ var m=mem.find(function(x){return x.id===b.dataset.ed;});
+    var v={currency:m.currency||'ARS'}; MEM_KEYS.forEach(function(k){ v[k]=m[k]||''; });
+    draft={type:m.type, step:0, v:v, memId:m.id}; editing=false; save('draft',draft); screen='fixpick'; render(); window.scrollTo(0,0);  }); }; });
+}
+function renderMemSummary(){
+  var m=mem.find(function(x){return x.id===draft.memId;}); if(!m){ draft=null; save('draft',null); screen='memmanage'; return render(); }
+  var t={name:m.name, type:draft.type, currency:draft.v.currency||'ARS'}; MEM_KEYS.forEach(function(k){ t[k]=draft.v[k]||''; });
+  app.innerHTML = hdr('Editing memorized')+'<h1 class="sm">Memorized item</h1>'+memCardHTML(t)+
+    '<div class="nav tight"><div class="btns"><button class="b-go" id="save">Save</button></div><div class="gatemsg" id="gm-msave"></div><div class="btns"><button class="b-ed" id="fix">Edit</button><button class="b-bk" id="cancel">Cancel</button></div></div>';
+  $('save').onclick=function(){ var miss=memMissing(t, !m.memo); if(miss){ $('gm-msave').textContent=miss; $('gm-msave').style.display='block'; return; }
+    m.type=t.type; m.currency=t.currency; delete m.amount;
+    MEM_KEYS.forEach(function(k){ m[k] = FIELDS[t.type].some(function(f){return f[0]===k;}) ? t[k] : ''; }); saveMem();
+    MEM_KEYS.forEach(function(k){ if(m[k] && k!=='memo') remember(k,m[k]); });
+    draft=null; save('draft',null); screen='memmanage'; render(); };
+  $('fix').onclick=function(){ screen='fixpick'; renderFixPick(); };
+  $('cancel').onclick=function(){ draft=null; save('draft',null); screen='memmanage'; render(); };
+}
+// Import an approved list: link with #mem=<base64url JSON>, or paste JSON/base64, or a .json file.
+function decodeMemPayload(txt){
+  txt=String(txt||'').trim(); var i=txt.indexOf('mem='); if(i>=0) txt=txt.slice(i+4);
+  var data;
+  try{ data=JSON.parse(txt); }catch(e){
+    var b=decodeURIComponent(txt).replace(/-/g,'+').replace(/_/g,'/').replace(/\s/g,''); while(b.length%4) b+='=';
+    var bin=atob(b), bytes=new Uint8Array(bin.length); for(var j=0;j<bin.length;j++) bytes[j]=bin.charCodeAt(j);
+    data=JSON.parse(new TextDecoder('utf-8').decode(bytes));
+  }
+  var arr=Array.isArray(data)?data:(data&&(data.items||data.memorized))||[];
+  var out=[];
+  arr.forEach(function(x){
+    if(!x||typeof x!=='object') return; var type=String(x.type||'expense').toLowerCase(); if(!FIELDS[type]) return;
+    var m={id:'m'+Date.now().toString(36)+Math.random().toString(36).slice(2,6), type:type, currency: String(x.currency||'ARS').toUpperCase()==='USD'?'USD':'ARS'}; // amount is never imported
+    MEM_KEYS.forEach(function(k){ m[k] = FIELDS[type].some(function(f){return f[0]===k;}) ? String(x[k]==null?'':x[k]).trim().slice(0,80) : ''; });
+    m.name = String(x.name||'').trim().slice(0,60) || memName(m);
+    out.push(m);
+  });
+  if(!out.length) throw new Error('empty');
+  return out;
+}
+function renderMemImport(){
+  var h = hdr('Import')+'<h1 class="sm">Import memorized</h1>';
+  if(pendingImport){
+    h += '<p class="hint" style="margin:0 0 8px;font-size:18px;color:#111">Add these '+pendingImport.length+' memorized items?</p><div class="card">'+
+      pendingImport.map(function(m){ return '<div class="ln"><b>'+esc(m.name)+'</b> · '+esc(memDesc(m))+'</div>'; }).join('')+'</div>'+
+      '<div class="nav tight"><div class="btns"><button class="b-go" id="add">Add '+pendingImport.length+'</button><button class="b-bk" id="cancel">Cancel</button></div></div>';
+    app.innerHTML=h;
+    $('add').onclick=function(){
+      var added=0; pendingImport.forEach(function(m){ var old=mem.find(function(x){ return x.name.toLowerCase()===m.name.toLowerCase(); }); if(old){ var id=old.id; Object.assign(old,m); old.id=id; } else { mem.push(m); added++; }
+        MEM_KEYS.forEach(function(k){ if(m[k] && k!=='memo') remember(k,m[k]); }); });
+      saveMem(); pendingImport=null; screen='memlist'; render(); };
+    $('cancel').onclick=function(){ pendingImport=null; screen='home'; render(); };
+    return;
+  }
+  h += '<p class="hint" style="margin:0 0 8px">Paste the list you were given, or choose its file.</p><textarea id="txt" placeholder="Paste here"></textarea>'+
+    '<div class="btns"><button class="b-go" id="chk">Check</button></div><div class="btns"><label class="b-bk" style="flex:1;text-align:center;padding:14px 6px;border-radius:14px;font-size:19px;font-weight:600">Choose file<input type="file" id="file" accept=".json,application/json,text/plain" style="display:none"></label></div>'+
+    '<p class="hint" id="err"></p><div class="nav tight"><div class="btns"><button class="b-bk" id="back">Back</button></div></div>';
+  app.innerHTML=h;
+  function tryIt(txt){ try{ pendingImport=decodeMemPayload(txt); renderMemImport(); }catch(e){ $('err').textContent='Could not read that list.'; } }
+  $('chk').onclick=function(){ tryIt($('txt').value); };
+  $('file').onchange=function(){ var f=this.files[0]; if(!f) return; var r=new FileReader(); r.onload=function(){ tryIt(r.result); }; r.readAsText(f); };
+  $('back').onclick=function(){ screen='memmanage'; render(); };
+}
+function checkHashImport(){
+  if(!/^#mem=/.test(location.hash)) return false;
+  var raw=location.hash.slice(5);
+  try{ history.replaceState(history.state,'',location.pathname+location.search); }catch(e){}
+  try{ pendingImport=decodeMemPayload(raw); return true; }catch(e){ flash='Could not read the memorized list link.'; return false; }
+}
+
+// ---------- list & export ----------
+var COLS=['type','entity','date','check','payee_or_from','account','to_account','category','currency','amount','memo','created_at'];
+function csvCell(s){ s=String(s==null?'':s); return /[",\n\r]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }
+function toCSV(list){
+  var rows=[COLS.join(',')];
+  list.forEach(function(e){ rows.push([e.type,e.entity,e.date,e.check,e.payee,e.account,e.to_account,e.category,e.currency,e.amount,e.memo,e.created_at].map(csvCell).join(',')); });
+  return '\ufeff'+rows.join('\r\n')+'\r\n';
+}
+var lastExport=[];
+function doExport(all, how){
+  var list = entries.filter(function(e){ return all || !e.exported_at; });
+  if(!list.length){ alert('Nothing to export.'); return; }
+  lastExport = list.map(function(e){return e.id;});
+  var name='entries-'+today()+'.csv', csv=toCSV(list), blob=new Blob([csv],{type:'text/csv'});
+  if(how==='share'){
+    var file; try{ file=new File([blob],name,{type:'text/csv'}); }catch(e){}
+    if(file && navigator.canShare && navigator.canShare({files:[file]})){
+      navigator.share({files:[file], title:name}).then(askMark).catch(function(){});
+      return;
+    }
+    alert('Share not available here. Downloading instead.');
+  }
+  var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); askMark(); }, 400);
+}
+function askMark(){ renderList(true); }
+function markExported(){
+  var t=new Date().toISOString();
+  entries.forEach(function(e){ if(lastExport.indexOf(e.id)>=0) e.exported_at=t; }); save('entries',entries); lastExport=[]; renderList();
+}
+function renderList(pending){
+  app.className='';
+  screen='list';
+  var n = entries.filter(function(e){return !e.exported_at;}).length;
+  var h = hdr(entries.length+' saved · '+n+' new')+'<h1>Saved entries</h1>'+(entries.length?'<div class="tapban">👆 Tap an entry to edit or delete it</div>':'');
+  if(pending && lastExport.length) h += '<div class="warn">Did the file go through? <button class="next" id="mark" style="margin-top:10px">Mark '+lastExport.length+' as exported</button></div>';
+  h += '<button class="next" id="share">Share CSV (new)</button><div style="height:10px"></div>'+
+       '<div class="row"><button class="back" id="dl">Download CSV (new)</button><button class="back" id="dlall">All</button></div><div style="height:16px"></div>';
+  if(!entries.length) h += '<p class="muted">No entries yet.</p>';
+  entries.slice().reverse().forEach(function(e){
+    h += '<div class="item" data-view="'+e.id+'" role="button"><span class="editcue">✎ Edit</span>'+cardHTML(e, '<div class="st">'+(e.exported_at?'Exported':'Not exported')+'</div>')+'</div>';
+  });
+  h += '<div class="nav"><button class="back" id="home">Back</button></div>';
+  app.innerHTML=h;
+  $('share').onclick=function(){ doExport(false,'share'); };
+  $('dl').onclick=function(){ doExport(false,'dl'); };
+  $('dlall').onclick=function(){ doExport(true,'dl'); };
+  if($('mark')) $('mark').onclick=markExported;
+  $('home').onclick=function(){ screen='home'; render(); };
+  app.querySelectorAll('[data-view]').forEach(function(d){ d.onclick=function(){ viewId=d.dataset.view; screen='view'; render(); }; });
+  navSync();
+}
+
+// ---------- phone Back button: in-app history ----------
+var stk=[], restoring=false, ignorePop=0, pendingPush=null;
+function curKey(){ return screen+'|'+(screen==='field'&&draft?(editing?'e':'')+draft.step:'')+(screen==='view'?viewId:''); }
+function snap(){ return {k:curKey(), s:screen, step:draft?draft.step:0, ed:editing, v:viewId}; }
+function doPush(st){ st.i=stk.length; stk.push(st); history.pushState(st,''); }
+function rewind(i, thenPush){
+  var n=stk.length-1-i; stk.length=i+1;
+  if(n>0){ ignorePop++; pendingPush=thenPush||null; history.go(-n); }
+  else if(thenPush) doPush(thenPush);
+}
+function navSync(){
+  if(restoring || !stk.length) return;
+  var k=curKey(), top=stk.length-1;
+  if(stk[top].k===k){ var s0=snap(); s0.i=top; stk[top]=s0; history.replaceState(s0,''); return; }
+  if(screen==='home') return rewind(0);
+  if(screen==='saved') return rewind(0, snap());
+  for(var i=top-1;i>=0;i--){ if(stk[i].k===k) return rewind(i); }
+  if(stk[top].s==='memimport') return rewind(top-1, snap()); // the import screen is not kept in Back history
+  doPush(snap());
+}
+window.addEventListener('popstate', function(ev){
+  if(ignorePop>0){ ignorePop--; if(pendingPush){ var p=pendingPush; pendingPush=null; doPush(p); } return; }
+  var st=ev.state;
+  if(!st || typeof st.i!=='number' || st.i>=stk.length+1){ st={k:'home|',s:'home',i:0}; }
+  stk.length=Math.min(stk.length, st.i); stk.push(st);
+  screen=st.s; editing=!!st.ed; if(st.v) viewId=st.v;
+  var needsDraft = screen==='field'||screen==='summary'||screen==='fixpick'||screen==='dup';
+  if(needsDraft && !draft) screen='home';
+  if(!needsDraft && draft){ draft=null; save('draft',null); editing=false; }
+  if(draft && screen==='field' && typeof st.step==='number') draft.step=st.step;
+  if(draft) save('draft',draft);
+  restoring=true; try{ renderInner(); } finally { restoring=false; }
+  if(curKey()!==st.k) navSync();
+  window.scrollTo(0,0);
+});
+// Keep this window in step with other open windows of the same app (installed app + browser tab).
+// Without this, a second window kept its old copy and could show, and even re-save, items deleted elsewhere.
+function refreshFromStorage(){
+  var m=load('mem',[]); mem=Array.isArray(m)?m:[];
+  entries=load('entries',[]); last=load('last',{});
+  var l=load('lists_v2',null); if(l) lists=l;
+  if(['home','list','view','saved','memlist','memmanage'].indexOf(screen)>=0){ restoring=true; try{ renderInner(); } finally { restoring=false; } }
+}
+window.addEventListener('storage', function(ev){ if(!ev.key || ev.key.indexOf(APP.store)===0){ if(ev.key!==APP.store+'draft') refreshFromStorage(); } });
+document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='visible') refreshFromStorage(); });
+window.addEventListener('pageshow', function(ev){ if(ev.persisted) refreshFromStorage(); });
+var hashImport = checkHashImport();
+(function initHistory(){
+  var base={k:'home|',s:'home',step:0,ed:false,v:null,i:0};
+  stk=[base]; history.replaceState(base,'');
+})();
+if(hashImport){ screen='memimport'; }
+render();
+window.addEventListener('hashchange', function(){ if(!/^#mem=/.test(location.hash)) return; if(checkHashImport()){ screen='memimport'; } else { draft=null; save('draft',null); screen='home'; } render(); });
+if('serviceWorker' in navigator){
+  var hadCtl = !!navigator.serviceWorker.controller, reloaded=false, reg=null;
+  navigator.serviceWorker.addEventListener('controllerchange', function(){ if(hadCtl && !reloaded){ reloaded=true; location.reload(); } });
+  function checkUpdate(){ if(reg && navigator.onLine!==false) reg.update().catch(function(){}); }
+  window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(function(r){ reg=r; checkUpdate(); }).catch(function(){}); });
+  document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='visible') checkUpdate(); });
+  window.addEventListener('online', checkUpdate);
+}
+window.__entry = {get entries(){return entries;}, toCSV:toCSV};
+})();
+</script>
+</body>
+</html>
