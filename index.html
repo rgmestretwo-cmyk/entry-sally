@@ -9,6 +9,19 @@
 <meta name="apple-mobile-web-app-title" content="Entry Sally">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="manifest" href="manifest.webmanifest">
+<script>
+// Private link (#mem=...): point "Add to Home Screen" / "Install" at THIS link, so the home-screen app
+// opens with the list and saves it by itself. Built on the phone only; the part after # never goes to the server.
+(function(){ try{
+  if(!/^#mem=/.test(location.hash)) return;
+  var MAN = {"name":"Entry Sally","short_name":"Entry Sally","id":"","theme_color":"#2c4f86"};
+  var base = location.href.split('#')[0].split('?')[0].replace(/[^\/]*$/, '');
+  var m = {name:MAN.name, short_name:MAN.short_name, id:base+MAN.id, start_url:location.href, scope:base, display:'standalone', orientation:'portrait',
+    background_color:'#ffffff', theme_color:MAN.theme_color,
+    icons:[{src:base+'icon-192.png',sizes:'192x192',type:'image/png',purpose:'any maskable'},{src:base+'icon-512.png',sizes:'512x512',type:'image/png',purpose:'any maskable'}]};
+  document.querySelector('link[rel=manifest]').href = 'data:application/manifest+json,' + encodeURIComponent(JSON.stringify(m));
+}catch(e){} })();
+</script>
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" href="icon-192.png">
 <title>Entry Sally</title>
@@ -80,6 +93,7 @@ h1.q{font-size:28px;margin:2px 0 12px;line-height:1.15}
 .memit .n{display:block;font-size:17px;font-weight:700;line-height:1.12}
 .memit .d{display:block;font-size:13.5px;color:#555;line-height:1.12}
 h1.mh{font-size:22px;margin:0 0 6px}
+.hint.step{font-size:19px;color:#111}
 .b-mem{background:#5b3f8c;color:#fff}
 .mrow{margin:0 0 12px}
 .mrow .btns button{padding:10px 4px;font-size:17px;min-height:44px}
@@ -105,7 +119,7 @@ var FIELDS = {
 };
 var PROMPT = {entity:'Entity?',date:'Date?',check:'Check #?',payee:'Payee?',account:'Account?',to_account:'To account?',category:'Category?',amount:'Amount?',memo:'Memo?'};
 var TYPE_LABEL = {expense:'Expense',deposit:'Deposit',transfer:'Transfer'};
-var APP_VERSION = 'S2';
+var APP_VERSION = 'S3';
 // Per-app settings (a separate build may replace this line): storage key prefix, display name, built-in approved memorized list
 var APP = {store:'entrysally.', name:'Entry Sally', builtinMem:null};
 var MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -116,7 +130,7 @@ function save(k, v){ localStorage.setItem(APP.store+k, JSON.stringify(v)); }
 var mem = load('mem', []);
 if(!Array.isArray(mem)) mem=[];
 (function(){ var ch=false; mem.forEach(function(m){ if('amount' in m){ delete m.amount; ch=true; } }); if(ch) save('mem', mem); })(); // memorized items never keep an amount
-var pendingImport=null, memFlash='', pendingLink='', listFlash='', deferredInstall=null;
+var pendingImport=null, memFlash='', listFlash='', installCount=0, deferredInstall=null;
 window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); deferredInstall=e; });
 function isStandalone(){ try{ return navigator.standalone===true || matchMedia('(display-mode: standalone)').matches; }catch(e){ return false; } }
 function isIOS(){ return /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1); }
@@ -211,38 +225,34 @@ function addImported(list){
     MEM_KEYS.forEach(function(k){ if(m[k] && k!=='memo') remember(k,m[k]); }); });
   saveMem(); return list.length;
 }
-function copyText(t){
-  var done=false;
-  try{ var ta=document.createElement('textarea'); ta.value=t; ta.setAttribute('readonly',''); ta.style.cssText='position:fixed;top:0;left:0;opacity:0;font-size:16px'; document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0,t.length); done=document.execCommand('copy'); document.body.removeChild(ta); }catch(e){}
-  try{ if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).catch(function(){}); }catch(e){}
-  return done;
-}
+function markLink(t){ var i=String(t).indexOf('mem='); if(i<0) return; var raw=String(t).slice(i+4).trim(), k=linkKey(raw), d=load('links',[]); if(d.indexOf(k)<0){ d.push(k); save('links',d); } }
 function pasteMyList(){
   function manual(msg){ listFlash=msg||''; screen='mempaste'; render(); }
   if(!(navigator.clipboard && navigator.clipboard.readText)) return manual();
   navigator.clipboard.readText().then(function(t){
-    var list; try{ list=decodeMemPayload(t); }catch(e){ return manual('The copied text is not a list. Open the link again and tap “Copy my list”.'); }
+    var list; try{ list=decodeMemPayload(t); }catch(e){ return manual('What you copied is not the list.'); } markLink(t);
     var n=addImported(list); listFlash='✓ '+n+' added'; screen='memlist'; render();
   }, function(){ manual(); });
 }
 function renderMemPaste(){
   app.innerHTML = hdr('Paste')+'<h1 class="sm">📋 Paste my list</h1>'+
     (listFlash?'<p class="hint" style="color:#a33">'+esc(listFlash)+'</p>':'')+
-    '<p class="hint" style="font-size:19px;color:#111;margin:0 0 8px">Press and hold inside the box, then tap <b>Paste</b>.</p>'+
+    '<p class="hint step" style="margin:0 0 6px">1. Go to WhatsApp. Press and hold the link, tap <b>Copy</b>.<br>2. Come back here. Press and hold inside the box, tap <b>Paste</b>.</p>'+
     '<textarea id="txt" placeholder="Press and hold here" style="min-height:140px;font-size:18px"></textarea><p class="hint" id="err"></p>'+
     '<div class="nav tight"><div class="btns"><button class="b-bk" id="back">Back</button></div></div>';
   listFlash='';
-  function tryIt(){ var t=$('txt').value; if(!t.trim()) return; try{ var n=addImported(decodeMemPayload(t)); listFlash='✓ '+n+' added'; screen='memlist'; render(); }catch(e){ $('err').textContent='That is not a list. Open the link again and tap “Copy my list”.'; } }
+  function tryIt(){ var t=$('txt').value; if(!t.trim()) return; try{ var n=addImported(decodeMemPayload(t)); markLink(t); listFlash='✓ '+n+' added'; screen='memlist'; render(); }catch(e){ $('err').textContent='That is not the list. Copy the link in WhatsApp and try again.'; } }
   $('txt').addEventListener('input', tryIt); $('txt').addEventListener('paste', function(){ setTimeout(tryIt,0); });
   $('back').onclick=function(){ screen='home'; render(); };
 }
 function renderMemInstall(){
-  var how = deferredInstall ? '<button class="big" id="inst">Install the app</button>' :
-    isIOS() ? '<p class="hint" style="font-size:20px;color:#111">Tap <b>Share</b> <span style="font-size:24px">⬆︎</span> at the bottom of the screen, then <b>Add to Home Screen</b>, then <b>Add</b>.</p>' :
-    '<p class="hint" style="font-size:20px;color:#111">Tap the menu <b>⋮</b> at the top right, then <b>Install app</b> or <b>Add to Home screen</b>.</p>';
-  app.innerHTML = hdr('')+'<div class="okmsg" style="font-size:20px">✓ Your list is copied.</div>'+
-    '<h1 class="sm">Now put '+esc(APP.name)+' on your home screen</h1>'+how+
-    '<p class="hint" style="font-size:19px;color:#111">Then open <b>'+esc(APP.name)+'</b> from the home screen. If it shows <b>📋 Paste my list</b>, tap it (and tap <b>Paste</b> or <b>Allow</b> if asked).</p>'+
+  var nm=esc(APP.name);
+  var how = deferredInstall ? '<button class="big" id="inst">Install '+nm+'</button>' :
+    isIOS() ? '<p class="hint step">Tap <b>•••</b> at the bottom right, then <b>Share</b>, then scroll down and tap <b>Add to Home Screen</b>, then <b>Add</b>.</p><p class="hint">(Older iPhones: tap <b>Share ⬆︎</b> at the bottom, then <b>Add to Home Screen</b>, then <b>Add</b>.)</p>' :
+    '<p class="hint step">Tap the menu <b>⋮</b> at the top right, then <b>Install app</b> or <b>Add to Home screen</b>.</p>';
+  app.innerHTML = hdr('')+'<div class="okmsg" style="font-size:20px">✓ Your list is ready ('+installCount+' items).</div>'+
+    '<h1 class="sm">Now put '+nm+' on your Home Screen</h1>'+how+
+    '<p class="hint step">Then open <b>'+nm+'</b> from your Home Screen. Your list will be there.</p>'+
     '<div class="nav tight"><div class="btns"><button class="b-bk" id="here">Use it here instead</button></div></div>';
   if($('inst')) $('inst').onclick=function(){ var d=deferredInstall; deferredInstall=null; d.prompt(); d.userChoice.then(function(){ render(); }, function(){ render(); }); };
   $('here').onclick=function(){ screen='memlist'; render(); };
@@ -529,17 +539,6 @@ function decodeMemPayload(txt){
 }
 function renderMemImport(){
   var h = hdr('Import')+'<h1 class="sm">Import memorized</h1>';
-  if(pendingImport && pendingLink){
-    h = hdr('Your list')+'<h1 class="sm mh">⭐ Your list ('+pendingImport.length+')</h1>'+
-      '<button class="big" id="add" style="margin:0 0 8px">📋 Copy my list</button>'+
-      '<div class="scrollarea" style="max-height:45vh">'+pendingImport.map(function(m){ return '<div class="memit" style="background:#f6f6f6;border-color:#bbb"><span class="n">'+esc(m.name)+'</span><span class="d">'+esc(memDesc(m))+'</span></div>'; }).join('')+'</div>'+
-      '<div class="nav tight"><div class="btns"><button class="b-bk" id="cancel">Cancel</button></div></div>';
-    app.innerHTML=h;
-    $('add').onclick=function(){ var link=pendingLink; copyText(link); addImported(pendingImport); pendingImport=null; pendingLink='';
-      if(isStandalone()){ listFlash='✓ Saved'; screen='memlist'; } else screen='meminstall'; render(); };
-    $('cancel').onclick=function(){ pendingImport=null; pendingLink=''; screen='home'; render(); };
-    return;
-  }
   if(pendingImport){
     h += '<p class="hint" style="margin:0 0 8px;font-size:18px;color:#111">Add these '+pendingImport.length+' memorized items?</p><div class="card">'+
       pendingImport.map(function(m){ return '<div class="ln"><b>'+esc(m.name)+'</b> · '+esc(memDesc(m))+'</div>'; }).join('')+'</div>'+
@@ -561,11 +560,18 @@ function renderMemImport(){
   $('file').onchange=function(){ var f=this.files[0]; if(!f) return; var r=new FileReader(); r.onload=function(){ tryIt(r.result); }; r.readAsText(f); };
   $('back').onclick=function(){ screen='memmanage'; render(); };
 }
+// A private link saves its list by itself, once per phone/app (so items deleted later do not come back).
+// The #mem=... stays in the address so "Add to Home Screen" keeps it; it is never sent to the server.
+function linkKey(raw){ var h=5381; for(var i=0;i<raw.length;i++) h=((h*33)^raw.charCodeAt(i))>>>0; return h.toString(36)+'.'+raw.length; }
 function checkHashImport(){
   if(!/^#mem=/.test(location.hash)) return false;
-  var raw=location.hash.slice(5); pendingLink=location.origin+location.pathname+'#mem='+raw;
-  try{ history.replaceState(history.state,'',location.pathname+location.search); }catch(e){}
-  try{ pendingImport=decodeMemPayload(raw); return true; }catch(e){ pendingLink=''; flash='Could not read the memorized list link.'; return false; }
+  var raw=location.hash.slice(5), key=linkKey(raw), done=load('links',[]), list;
+  try{ list=decodeMemPayload(raw); }catch(e){ try{ history.replaceState(history.state,'',location.pathname+location.search); }catch(e2){} flash='Could not read the memorized list link.'; return false; }
+  var fresh = done.indexOf(key)<0;
+  if(fresh){ var n=addImported(list); done.push(key); save('links',done); listFlash='✓ '+n+' added'; }
+  installCount=list.length;
+  if(isStandalone()) return fresh ? 'memlist' : false;
+  return 'meminstall';
 }
 
 // ---------- list & export ----------
@@ -672,9 +678,9 @@ var hashImport = checkHashImport();
   var base={k:'home|',s:'home',step:0,ed:false,v:null,i:0};
   stk=[base]; history.replaceState(base,'');
 })();
-if(hashImport){ screen='memimport'; }
+if(hashImport){ screen=hashImport; }
 render();
-window.addEventListener('hashchange', function(){ if(!/^#mem=/.test(location.hash)) return; if(checkHashImport()){ screen='memimport'; } else { draft=null; save('draft',null); screen='home'; } render(); });
+window.addEventListener('hashchange', function(){ if(!/^#mem=/.test(location.hash)) return; var r=checkHashImport(); if(r){ draft=null; save('draft',null); screen=r; } else if(flash){ draft=null; save('draft',null); screen='home'; } else return; render(); });
 if('serviceWorker' in navigator){
   var hadCtl = !!navigator.serviceWorker.controller, reloaded=false, reg=null;
   navigator.serviceWorker.addEventListener('controllerchange', function(){ if(hadCtl && !reloaded){ reloaded=true; location.reload(); } });
